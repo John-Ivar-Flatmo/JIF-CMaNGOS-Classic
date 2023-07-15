@@ -4,7 +4,7 @@
 This file is part of the CMaNGOS Project. See [AUTHORS](AUTHORS.md) and [COPYRIGHT](COPYRIGHT.md) files for Copyright information
 
 
-## this is code for a non public server, its tailored to the peaple who play it and you may not care for some of the changes, the repo was made public so that other may benefit, be it straight up copying or refrence material
+the changes to this version of cmangos are for a non public server, its tailored to the peaple who play it and you may not care for some of the changes, the repo was made public so that other may benefit, be it straight up copying or refrence material
 
 ## some of the changes from cmangos
 * removal of player kick ##including for cheating so not reccomended
