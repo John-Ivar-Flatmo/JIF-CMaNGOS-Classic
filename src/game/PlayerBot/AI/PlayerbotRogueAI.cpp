@@ -184,7 +184,14 @@ CombatManeuverReturns PlayerbotRogueAI::DoNextCombatManeuverPVE(Unit* pTarget)
             m_bot.GetMotionMaster()->MoveChase( pTarget );
         }
        }*/
-
+//if (pVictim)
+//       {	//BROKE CANNOT COMPILE
+//        if( pVictim!=m_bot && !m_bot.hasUnitState(UNIT_STAT_FOLLOW) && !pTarget->isInBackInMap(m_bot,10) ) {
+//            //m_ai.TellMaster( "getting behind target" );
+//            m_bot.GetMotionMaster()->Clear( true );
+//            m_bot.GetMotionMaster()->MoveFollow( pTarget, 1, 2*M_PI );
+//        }	//JIFEDIT //maybe works really dont koow
+//}
     // If bot is stealthed: pre-combat actions
     if (m_bot.HasAura(STEALTH, EFFECT_INDEX_0))
     {
@@ -192,9 +199,9 @@ CombatManeuverReturns PlayerbotRogueAI::DoNextCombatManeuverPVE(Unit* pTarget)
             return RETURN_CONTINUE;
         if (PREMEDITATION > 0 && m_ai.CastSpell(PREMEDITATION, *pTarget) == SPELL_CAST_OK)
             return RETURN_CONTINUE;
-        if (AMBUSH > 0 && pTarget->isInBackInMap(&m_bot, 5.0f) && m_ai.CastSpell(AMBUSH, *pTarget) == SPELL_CAST_OK)
-            return RETURN_CONTINUE;
         if (CHEAP_SHOT > 0 && !pTarget->HasAura(CHEAP_SHOT, EFFECT_INDEX_0) && m_ai.CastSpell(CHEAP_SHOT, *pTarget) == SPELL_CAST_OK)
+            return RETURN_CONTINUE;
+        if (AMBUSH > 0 && pTarget->isInBackInMap(&m_bot, 5.0f) && m_ai.CastSpell(AMBUSH, *pTarget) == SPELL_CAST_OK)
             return RETURN_CONTINUE;
         if (GARROTE > 0 && pTarget->isInBackInMap(&m_bot, 5.0f) && m_ai.CastSpell(GARROTE, *pTarget) == SPELL_CAST_OK)
             return RETURN_CONTINUE;

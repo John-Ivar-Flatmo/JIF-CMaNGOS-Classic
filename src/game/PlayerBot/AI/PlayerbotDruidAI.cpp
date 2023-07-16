@@ -69,6 +69,7 @@ PlayerbotDruidAI::PlayerbotDruidAI(Player& master, Player& bot, PlayerbotAI& ai)
     CHALLENGING_ROAR              = m_ai.initSpell(CHALLENGING_ROAR_1);
     ENRAGE                        = m_ai.initSpell(ENRAGE_1);
     GROWL                         = m_ai.initSpell(GROWL_1);
+    FRENZIED_REGENERATION         = m_ai.initSpell(FRENZIED_REGENERATION_1);
 
     RECENTLY_BANDAGED             = 11196; // first aid check
 
@@ -178,6 +179,10 @@ CombatManeuverReturns PlayerbotDruidAI::DoNextCombatManeuverPVE(Unit* pTarget)
     if (spec == 0) // default to spellcasting or healing for healer
         spec = (PlayerbotAI::ORDERS_HEAL & m_ai.GetCombatOrder() ? DRUID_SPEC_RESTORATION : DRUID_SPEC_BALANCE);
 
+if( (spec == DRUID_SPEC_BALANCE) && (!MOONKIN_FORM) && (m_bot.HasAura(OMEN_OF_CLARITY)) ){
+spec = DRUID_SPEC_FERAL;
+};
+
     // Make sure healer stays put, don't even melee (aggro) if in range: only melee if feral spec AND not healer
     if (!m_ai.IsHealer() && spec == DRUID_SPEC_FERAL && m_ai.GetCombatStyle() != PlayerbotAI::COMBAT_MELEE)
         m_ai.SetCombatStyle(PlayerbotAI::COMBAT_MELEE);
@@ -276,39 +281,61 @@ CombatManeuverReturns PlayerbotDruidAI::DoNextCombatManeuverPVP(Unit* pTarget)
 
 CombatManeuverReturns PlayerbotDruidAI::_DoNextPVECombatManeuverBear(Unit* pTarget)
 {
+if(m_ai.GetManaPercent() > 50){
+    if (Buff(&PlayerbotDruidAI::BuffHelper, THORNS, (m_bot.GetGroup() ? JOB_TANK | JOB_MAIN_TANK : JOB_ALL)) & RETURN_CONTINUE)
+        return RETURN_CONTINUE;
+    if (OMEN_OF_CLARITY > 0 && !m_bot.HasAura(OMEN_OF_CLARITY) && CastSpell(OMEN_OF_CLARITY, &m_bot))
+        return RETURN_CONTINUE;
+	CheckForms();
+};
     if (!m_bot.HasAura((DIRE_BEAR_FORM > 0 ? DIRE_BEAR_FORM : BEAR_FORM))) return RETURN_NO_ACTION_ERROR;
+
+    m_ai.FaceTarget(pTarget);	//face enemy first of all
+
+    if(PlayerbotAI::ORDERS_TANK & m_ai.GetCombatOrder()){
+	 if (CastSpell(CHALLENGING_ROAR, pTarget))
+	 return RETURN_CONTINUE;
+    };	//actualy fucking use challanging roar	##also do before figuring out if we hae threat for growl
 
     // Used to determine if this bot is highest on threat
     Unit* newTarget = m_ai.FindAttacker((PlayerbotAI::ATTACKERINFOTYPE)(PlayerbotAI::AIT_VICTIMSELF | PlayerbotAI::AIT_HIGHESTTHREAT), &m_bot);
 
-    // Face enemy, make sure you're attacking
-    m_ai.FaceTarget(pTarget);
-
     if (PlayerbotAI::ORDERS_TANK & m_ai.GetCombatOrder() && !newTarget && GROWL > 0 && m_bot.IsSpellReady(GROWL))
         if (CastSpell(GROWL, pTarget))
-            return RETURN_CONTINUE;
+            return RETURN_CONTINUE;	//growl if no have threat
 
-    if (FAERIE_FIRE_FERAL > 0 && m_ai.In_Reach(pTarget, FAERIE_FIRE_FERAL) && !pTarget->HasAura(FAERIE_FIRE_FERAL, EFFECT_INDEX_0))
-        if (CastSpell(FAERIE_FIRE_FERAL, pTarget))
-            return RETURN_CONTINUE;
-
-    if (SWIPE > 0 && m_ai.In_Reach(pTarget, SWIPE) && m_ai.GetAttackerCount() >= 2 && CastSpell(SWIPE, pTarget))
-        return RETURN_CONTINUE;
+    if (FRENZIED_REGENERATION > 0 && (m_ai.GetHealthPercent() < 25) && m_bot.IsSpellReady(FRENZIED_REGENERATION) && CastSpell(FRENZIED_REGENERATION, &m_bot))
+        return RETURN_CONTINUE;	//actualy fucking use frenzied regen
 
     if (ENRAGE > 0 && m_bot.IsSpellReady(ENRAGE) && CastSpell(ENRAGE, &m_bot))
         return RETURN_CONTINUE;
 
     if (DEMORALIZING_ROAR > 0 && !pTarget->HasAura(DEMORALIZING_ROAR, EFFECT_INDEX_0) && CastSpell(DEMORALIZING_ROAR, pTarget))
-        return RETURN_CONTINUE;
+        return RETURN_CONTINUE;	//make sure roar is active
+
+    if(!m_bot.HasAura(FRENZIED_REGENERATION, EFFECT_INDEX_0)){
+    if (FAERIE_FIRE_FERAL > 0 && m_ai.In_Reach(pTarget, FAERIE_FIRE_FERAL) && !pTarget->HasAura(FAERIE_FIRE_FERAL, EFFECT_INDEX_0))
+        if (CastSpell(FAERIE_FIRE_FERAL, pTarget))
+            return RETURN_CONTINUE;	//faerie fire main target
+
+    if (SWIPE > 0 && m_ai.In_Reach(pTarget, SWIPE) && m_ai.GetAttackerCount() >= 2 && CastSpell(SWIPE, pTarget))
+        return RETURN_CONTINUE;	//swipe spam
 
     if (MAUL > 0 && CastSpell(MAUL, pTarget))
-        return RETURN_CONTINUE;
-
+        return RETURN_CONTINUE;	//if only 1 target then maul
+};	//only attack while not frenzied regen
     return RETURN_NO_ACTION_UNKNOWN;
 }
 
 CombatManeuverReturns PlayerbotDruidAI::_DoNextPVECombatManeuverCat(Unit* pTarget)
 {
+if(m_ai.GetManaPercent() > 25){
+    if (Buff(&PlayerbotDruidAI::BuffHelper, THORNS, (m_bot.GetGroup() ? JOB_TANK | JOB_MAIN_TANK : JOB_ALL)) & RETURN_CONTINUE)
+        return RETURN_CONTINUE;
+    if (OMEN_OF_CLARITY > 0 && !m_bot.HasAura(OMEN_OF_CLARITY) && CastSpell(OMEN_OF_CLARITY, &m_bot))
+        return RETURN_CONTINUE;
+	CheckForms();
+};
     if (!m_bot.HasAura(CAT_FORM)) return RETURN_NO_ACTION_UNKNOWN;
 
     //Used to determine if this bot is highest on threat
@@ -317,38 +344,37 @@ CombatManeuverReturns PlayerbotDruidAI::_DoNextPVECombatManeuverCat(Unit* pTarge
     // Face enemy, make sure you're attacking
     m_ai.FaceTarget(pTarget);
 
+    if (FAERIE_FIRE_FERAL > 0 && m_ai.In_Reach(pTarget, FAERIE_FIRE_FERAL) && !pTarget->HasAura(FAERIE_FIRE_FERAL, EFFECT_INDEX_0) && CastSpell(FAERIE_FIRE_FERAL, pTarget))
+        return RETURN_CONTINUE;	//ensure fearie fire were dps might aswell contribute properly
+
+    if (TIGERS_FURY > 0 && m_bot.IsSpellReady(TIGERS_FURY) && !m_bot.HasAura(TIGERS_FURY, EFFECT_INDEX_0) && CastSpell(TIGERS_FURY))
+        return RETURN_CONTINUE;	//ensure tigers fury
+
     // Attempt to do a finishing move
-    if (m_bot.GetComboPoints() >= 5)
+    if (m_bot.GetComboPoints() >= 3)
     {
-        if (RIP > 0 && !pTarget->HasAura(RIP, EFFECT_INDEX_0))
+        if (FEROCIOUS_BITE > 0)
+        {
+            if (CastSpell(FEROCIOUS_BITE, pTarget))
+                return RETURN_CONTINUE;	//prefer forocius bite as it can be better depending on talents
+        }
+	else if (RIP > 0 && !pTarget->HasAura(RIP, EFFECT_INDEX_0))
         {
             if (CastSpell(RIP, pTarget))
                 return RETURN_CONTINUE;
         }
-        // 35 Energy
-        else if (FEROCIOUS_BITE > 0)
-        {
-            if (CastSpell(FEROCIOUS_BITE, pTarget))
-                return RETURN_CONTINUE;
-        }
     } // End 5 ComboPoints
+
+    if (SHRED > 0 && pTarget->isInBackInMap(&m_bot, 5.0f) && m_ai.CastSpell(SHRED, *pTarget) == SPELL_CAST_OK)
+        return RETURN_CONTINUE;	//prefer shred for better clearcasting use
+
+    if (CLAW > 0 && CastSpell(CLAW, pTarget))
+        return RETURN_CONTINUE;	//default to claw if not shread
 
     if (newTarget && COWER > 0 && m_bot.IsSpellReady(COWER) && CastSpell(COWER, pTarget))
         return RETURN_CONTINUE;
 
-    if (SHRED > 0 && pTarget->isInBackInMap(&m_bot, 5.0f) && m_ai.CastSpell(SHRED, *pTarget) == SPELL_CAST_OK)
-        return RETURN_CONTINUE;
-
-    if (FAERIE_FIRE_FERAL > 0 && m_ai.In_Reach(pTarget, FAERIE_FIRE_FERAL) && !pTarget->HasAura(FAERIE_FIRE_FERAL, EFFECT_INDEX_0) && CastSpell(FAERIE_FIRE_FERAL, pTarget))
-        return RETURN_CONTINUE;
-
-    if (TIGERS_FURY > 0 && m_bot.IsSpellReady(TIGERS_FURY) && !m_bot.HasAura(TIGERS_FURY, EFFECT_INDEX_0) && CastSpell(TIGERS_FURY))
-        return RETURN_CONTINUE;
-
     if (RAKE > 0 && !pTarget->HasAura(RAKE) && CastSpell(RAKE, pTarget))
-        return RETURN_CONTINUE;
-
-    if (CLAW > 0 && CastSpell(CLAW, pTarget))
         return RETURN_CONTINUE;
 
     return RETURN_NO_ACTION_UNKNOWN;
@@ -423,11 +449,35 @@ CombatManeuverReturns PlayerbotDruidAI::HealPlayer(Player* target)
     // Other classes have to adjust their position to the healers
     // TODO: This code should be common to all healers and will probably
     // move to a more suitable place like PlayerbotAI::DoCombatMovement()
-    if ((GetTargetJob(target) == JOB_TANK || GetTargetJob(target) == JOB_MAIN_TANK)
+	uint32 testSpellReach = HEALING_TOUCH;
+    if ((GetTargetJob(target) == JOB_TANK || GetTargetJob(target) == JOB_MAIN_TANK || target->GetHealthPercent() < 50)
             && m_bot.GetPlayerbotAI()->GetMovementOrder() != PlayerbotAI::MOVEMENT_STAY
-            && !m_ai.In_Reach(target, HEALING_TOUCH))
+            && !m_ai.In_Reach(target, testSpellReach))
     {
         m_bot.GetMotionMaster()->MoveFollow(target, 39.0f, m_bot.GetOrientation());
+        return RETURN_CONTINUE;
+    }
+
+    if ((target->GetHealthPercent() < 25)
+	&& m_bot.GetPlayerbotAI()->GetMovementOrder() != PlayerbotAI::MOVEMENT_STAY
+	&& !m_ai.In_Reach(target, testSpellReach))
+    {
+        m_bot.GetMotionMaster()->MoveFollow(target, 19.0f, m_bot.GetOrientation());
+        return RETURN_CONTINUE;
+    }
+
+    if ((target->GetHealthPercent() < 15)
+	&& m_bot.GetPlayerbotAI()->GetMovementOrder() != PlayerbotAI::MOVEMENT_STAY
+	&& !m_ai.In_Reach(target, testSpellReach))
+    {
+        m_bot.GetMotionMaster()->MoveFollow(target, 9.0f, m_bot.GetOrientation());
+        return RETURN_CONTINUE;
+    }
+
+    if ((target->GetHealthPercent() < 7)
+	&& m_bot.GetPlayerbotAI()->GetMovementOrder() != PlayerbotAI::MOVEMENT_STAY)
+    {
+        m_bot.GetMotionMaster()->MoveFollow(target, 1.0f, m_bot.GetOrientation());
         return RETURN_CONTINUE;
     }
 
@@ -573,7 +623,6 @@ uint8 PlayerbotDruidAI::CheckForms()
         else
             return RETURN_FAIL;
     }
-
     if (spec == DRUID_SPEC_FERAL)
     {
         // Use Bear form only if we are told we're a tank and have thorns up
@@ -597,6 +646,19 @@ uint8 PlayerbotDruidAI::CheckForms()
         {
             if (CAT_FORM > 0)
             {
+if( (m_ai.GetAttackerCount() >= 3) && (BEAR > 0) ){
+                if (m_bot.HasAura(BEAR))
+                    return RETURN_OK_NOCHANGE;
+
+                if (CastSpell(BEAR)){
+                    return RETURN_OK_SHIFTING;
+}else{               
+if (CastSpell(CAT_FORM))
+                    return RETURN_OK_SHIFTING;
+                else
+                    return RETURN_FAIL;
+};
+}else{
                 if (m_bot.HasAura(CAT_FORM))
                     return RETURN_OK_NOCHANGE;
 
@@ -604,6 +666,7 @@ uint8 PlayerbotDruidAI::CheckForms()
                     return RETURN_OK_SHIFTING;
                 else
                     return RETURN_FAIL;
+};
             }
 
             if (BEAR > 0)

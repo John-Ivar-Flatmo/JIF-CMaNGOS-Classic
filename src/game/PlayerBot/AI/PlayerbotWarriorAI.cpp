@@ -330,6 +330,10 @@ CombatManeuverReturns PlayerbotWarriorAI::DoNextCombatManeuverPVE(Unit* pTarget)
             return RETURN_CONTINUE;
         if (EXECUTE > 0 && pTarget->GetHealthPercent() < 20 && m_ai.CastSpell(EXECUTE, *pTarget) == SPELL_CAST_OK)
             return RETURN_CONTINUE;
+        if (OVERPOWER > 0 && m_bot.IsSpellReady(OVERPOWER)){
+                if (m_bot.IsSpellReady(OVERPOWER) && m_ai.CastSpell(OVERPOWER, *pTarget) == SPELL_CAST_OK)
+                    return RETURN_CONTINUE;
+        }; //overpower is strong and cheap use it
         if (BLOODTHIRST > 0 && m_bot.IsSpellReady(BLOODTHIRST) && m_ai.CastSpell(BLOODTHIRST, *pTarget) == SPELL_CAST_OK)
             return RETURN_CONTINUE;
         if (WHIRLWIND > 0 && m_bot.IsSpellReady(WHIRLWIND) && m_ai.CastSpell(WHIRLWIND, *pTarget) == SPELL_CAST_OK)
@@ -363,24 +367,24 @@ CombatManeuverReturns PlayerbotWarriorAI::DoNextCombatManeuverPVE(Unit* pTarget)
 
         if (EXECUTE > 0 && pTarget->GetHealthPercent() < 20 && m_ai.CastSpell(EXECUTE, *pTarget) == SPELL_CAST_OK)
             return RETURN_CONTINUE;
-        if (REND > 0 && !pTarget->HasAura(REND, EFFECT_INDEX_0) && m_ai.CastSpell(REND, *pTarget) == SPELL_CAST_OK)
-            return RETURN_CONTINUE;
-        if (MORTAL_STRIKE > 0 && m_bot.IsSpellReady(MORTAL_STRIKE) && m_ai.CastSpell(MORTAL_STRIKE, *pTarget) == SPELL_CAST_OK)
-            return RETURN_CONTINUE;
         if (OVERPOWER > 0 && m_bot.IsSpellReady(OVERPOWER))
         {
-            uint8 base = pTarget->RollMeleeOutcomeAgainst(&m_bot, BASE_ATTACK, SPELL_SCHOOL_MASK_NORMAL);
-            uint8 off = pTarget->RollMeleeOutcomeAgainst(&m_bot, OFF_ATTACK, SPELL_SCHOOL_MASK_NORMAL);
-            if (base == MELEE_HIT_DODGE || off == MELEE_HIT_DODGE)
-            {
+            //uint8 base = pTarget->RollMeleeOutcomeAgainst(&m_bot, BASE_ATTACK, SPELL_SCHOOL_MASK_NORMAL);
+            //uint8 off = pTarget->RollMeleeOutcomeAgainst(&m_bot, OFF_ATTACK, SPELL_SCHOOL_MASK_NORMAL);
+            //if (base == MELEE_HIT_DODGE || off == MELEE_HIT_DODGE)
+            //{
                 if (m_bot.IsSpellReady(OVERPOWER) && m_ai.CastSpell(OVERPOWER, *pTarget) == SPELL_CAST_OK)
                     return RETURN_CONTINUE;
-            }
-        }
+            //}	//JIFEDIT //overpower is strong and cheap use it regardless
+        };
+        if (MORTAL_STRIKE > 0 && m_bot.IsSpellReady(MORTAL_STRIKE) && m_ai.CastSpell(MORTAL_STRIKE, *pTarget) == SPELL_CAST_OK)
+            return RETURN_CONTINUE;
         if (THUNDER_CLAP > 0 && !pTarget->HasAura(THUNDER_CLAP) && m_ai.CastSpell(THUNDER_CLAP, *pTarget) == SPELL_CAST_OK)
             return RETURN_CONTINUE;
         if (HEROIC_STRIKE > 0 && m_ai.CastSpell(HEROIC_STRIKE, *pTarget) == SPELL_CAST_OK)
             return RETURN_CONTINUE;
+        if (REND > 0 && !pTarget->HasAura(REND, EFFECT_INDEX_0) && m_ai.CastSpell(REND, *pTarget) == SPELL_CAST_OK)
+            return RETURN_CONTINUE;	//JIFEDIT //rend is overated but still better than slam
         if (SLAM > 0 && m_ai.CastSpell(SLAM, *pTarget) == SPELL_CAST_OK)
             return RETURN_CONTINUE;
     }
@@ -393,6 +397,10 @@ CombatManeuverReturns PlayerbotWarriorAI::DoNextCombatManeuverPVE(Unit* pTarget)
             if (m_ai.GetCombatOrder() & PlayerbotAI::ORDERS_TANK && TAUNT > 0 && m_bot.IsSpellReady(TAUNT) && m_ai.CastSpell(TAUNT, *pTarget) == SPELL_CAST_OK)
                 return RETURN_CONTINUE;
         }
+	if (newTarget){
+        if (REND > 0 && !pTarget->HasAura(REND, EFFECT_INDEX_0) && m_ai.CastSpell(REND, *pTarget) == SPELL_CAST_OK)
+            return RETURN_CONTINUE;	//JIFEDIT //rend to keep agro on new target, incase we quickly switch agein
+	};
 
         // If tank is on the verge of dying but "I DON'T WANT TO DIE !!! :'-(("
         // TODO: should behaviour (or treshold) be different between elite and normal mobs? We don't want bots to burn such precious cooldown needlessly

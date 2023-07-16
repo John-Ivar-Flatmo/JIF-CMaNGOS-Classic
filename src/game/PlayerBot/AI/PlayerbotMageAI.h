@@ -155,7 +155,8 @@ class PlayerbotMageAI : PlayerbotClassAI
                ICE_BARRIER,
                FROST_WARD,
                ICE_BLOCK,
-               COLD_SNAP;
+               COLD_SNAP,
+               WINTERS_CHILL;
 
         // buffs
         uint32 FROST_ARMOR,

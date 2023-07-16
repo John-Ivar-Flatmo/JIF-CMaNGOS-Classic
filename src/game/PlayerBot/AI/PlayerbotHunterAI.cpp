@@ -191,12 +191,12 @@ CombatManeuverReturns PlayerbotHunterAI::DoNextCombatManeuverPVE(Unit* pTarget)
     else if (pet && INTIMIDATION > 0 && pVictim == pet && !pet->HasAura(INTIMIDATION, EFFECT_INDEX_0) && m_ai.CastSpell(INTIMIDATION, m_bot) == SPELL_CAST_OK)
         return RETURN_CONTINUE;
 
-    /*    // racial traits
+        // racial traits
         if (m_bot.getRace() == RACE_ORC && !m_bot.HasAura(BLOOD_FURY, EFFECT_INDEX_0))
             m_ai.CastSpell(BLOOD_FURY, m_bot);
         else if (m_bot.getRace() == RACE_TROLL && !m_bot.HasAura(BERSERKING, EFFECT_INDEX_0))
             m_ai.CastSpell(BERSERKING, m_bot);
-    */
+    
     // check if ranged combat is possible: by default chose ranged combat
     bool meleeReach = m_bot.CanReachWithMeleeAttack(pTarget);
 
@@ -306,15 +306,21 @@ CombatManeuverReturns PlayerbotHunterAI::DoNextCombatManeuverPVE(Unit* pTarget)
         if (AIMED_SHOT > 0 && m_bot.IsSpellReady(AIMED_SHOT) && m_ai.In_Range(pTarget, AIMED_SHOT) && m_ai.CastSpell(AIMED_SHOT, *pTarget) == SPELL_CAST_OK)
             return RETURN_CONTINUE;
 
-//       if (MULTI_SHOT > 0 && m_bot.IsSpellReady(MULTI_SHOT) && m_ai.In_Range(pTarget,MULTI_SHOT) && m_ai.GetAttackerCount() >= 3 && m_ai.CastSpell(MULTI_SHOT, *pTarget) == SPELL_CAST_OK)
-//            return RETURN_CONTINUE;
-//       if (VOLLEY > 0 && m_ai.In_Range(pTarget,VOLLEY) && m_ai.GetAttackerCount() >= 3 && m_ai.CastSpell(VOLLEY, *pTarget) == SPELL_CAST_OK)
-//           return RETURN_CONTINUE;
+       if (MULTI_SHOT > 0 && m_bot.IsSpellReady(MULTI_SHOT) && m_ai.In_Range(pTarget,MULTI_SHOT) && m_ai.GetAttackerCount() >= 2 && m_ai.CastSpell(MULTI_SHOT, *pTarget) == SPELL_CAST_OK)
+            return RETURN_CONTINUE;
+       if (VOLLEY > 0 && m_ai.In_Range(pTarget,VOLLEY) && m_ai.GetAttackerCount() >= 3 && m_ai.CastSpell(VOLLEY, *pTarget) == SPELL_CAST_OK)
+	{
+       	 m_ai.SetIgnoreUpdateTime(6);
+       	 return RETURN_CONTINUE;
+	}
 
         // Auto shot
         // m_ai.TellMaster("target dist %f",m_bot.GetCombatDistance(pTarget,true));
         if (AUTO_SHOT > 0)
         {
+	if(meleeReach){
+	m_bot.GetMotionMaster()->MoveFollow(GetHealTarget(), 19.0f, m_bot.GetOrientation()); //if cant cast shoot then move
+	};	//if in melle range and a ranged hunte then move away to be able to use autoShot
             if (m_bot.isAttackReady(RANGED_ATTACK))
                 m_bot.CastSpell(pTarget, AUTO_SHOT, TRIGGERED_OLD_TRIGGERED);
 

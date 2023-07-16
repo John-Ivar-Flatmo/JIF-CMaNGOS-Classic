@@ -159,7 +159,8 @@ class PlayerbotDruidAI : PlayerbotClassAI
                CHALLENGING_ROAR,
                GROWL,
                ENRAGE,
-               FAERIE_FIRE_FERAL;
+               FAERIE_FIRE_FERAL,
+	       FRENZIED_REGENERATION;
 
         // druid caster DPS attacks & debuffs
         uint32 MOONFIRE,
