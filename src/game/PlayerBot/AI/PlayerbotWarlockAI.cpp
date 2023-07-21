@@ -84,7 +84,6 @@ PlayerbotWarlockAI::PlayerbotWarlockAI(Player& master, Player& bot, PlayerbotAI&
     WILL_OF_THE_FORSAKEN  = m_ai.initSpell(WILL_OF_THE_FORSAKEN_ALL); // undead
 
     m_lastDemon           = 0;
-    m_isTempImp           = false;
     m_CurrentCurse        = 0;
 }
 
@@ -482,6 +481,26 @@ auto* creature = (Creature*) newTarget;
 
     // If pet other than imp is active: return
 
+	//assign deamon of choice based on player prefrence
+int preferedPet=m_ai.GetPreferedWarlockPet();
+	if (preferedPet != 0) {
+		switch (preferedPet) {		
+			case 1:
+				demonOfChoice = DEMON_IMP;		
+				break;
+			case 2:
+				demonOfChoice = DEMON_VOIDWALKER;			
+				break;
+			case 3:
+				demonOfChoice = DEMON_SUCCUBUS;		
+				break;
+			case 4:
+				demonOfChoice = DEMON_FELHUNTER;	
+				break;
+		};
+	}
+	else {
+
     // Assign demon of choice based on spec
     if (spec == WARLOCK_SPEC_AFFLICTION)
         demonOfChoice = DEMON_FELHUNTER;
@@ -503,17 +522,22 @@ if( creature && target ){
 	demonOfChoice = DEMON_VOIDWALKER;	//if low health then voidwalker
 	};			///////////////----------------------------/////////////
 };
+};
 
     if (pet && pet->GetEntry() != demonOfChoice)
         return; //if we already have the pet we want just return
     // Summon demon
-    if (!pet || m_isTempImp)
+    if (!pet)
     {
         uint32 summonSpellId;
         if (demonOfChoice != DEMON_IMP && shardCount > 0)
         {
             switch (demonOfChoice)
             {
+		case DEMON_IMP:
+                    summonSpellId = SUMMON_IMP;
+                    break;
+
                 case DEMON_VOIDWALKER:
                     summonSpellId = SUMMON_VOIDWALKER;
                     break;
@@ -530,22 +554,27 @@ if( creature && target ){
                     summonSpellId = 0;
             }
 
-            if (summonSpellId && m_ai.CastSpell(summonSpellId) == SPELL_CAST_OK)
+            if (m_ai.CastSpell(summonSpellId) == SPELL_CAST_OK)
             {
-                //m_ai.TellMaster("Summoning favorite demon...");
-                m_isTempImp = false;
+                m_ai.TellMaster("Summoning favorite demon...");
+		m_ai.MovementClear();
+		m_ai.SetIgnoreUpdateTime(15);
                 return;
             }
-        }
+	else {
+		if (m_ai.CastSpell(SUMMON_IMP) == SPELL_CAST_OK){
+			//m_ai.TellMaster("cant summon favorite deamon, so trying imp...");
+			m_ai.MovementClear();
+			m_ai.SetIgnoreUpdateTime(15);
+                	return;
+		}else{//m_ai.TellMaster("oof i cant even imp...");};
+	}
 
-        if (!pet && SUMMON_IMP && m_ai.CastSpell(SUMMON_IMP) == SPELL_CAST_OK)
-        {
-            m_isTempImp = demonOfChoice != DEMON_IMP;
-
-            //m_ai.TellMaster("Summoning Imp...");
-            return;
+	    
         }
     }
+}
+
 }
 
 void PlayerbotWarlockAI::DoNonCombatActions()
@@ -585,6 +614,9 @@ void PlayerbotWarlockAI::DoNonCombatActions()
 
         m_lastDemon = pet->GetEntry();
     }
+
+//can probly improve keep amount of soul shard by scaling by level or identifying soul pouches, but missing the variables atm
+//MAX_SHARD_COUNT= ( getConfig(CONFIG_UINT32_MAX_PLAYER_LEVEL))/28);
 
     // Destroy extra soul shards
     uint8 shardCount = m_bot.GetItemCount(SOUL_SHARD, false, nullptr);

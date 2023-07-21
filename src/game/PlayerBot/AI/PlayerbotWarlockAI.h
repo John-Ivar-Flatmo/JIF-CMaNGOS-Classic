@@ -242,7 +242,6 @@ class PlayerbotWarlockAI : PlayerbotClassAI
                WILL_OF_THE_FORSAKEN;
 
         uint32 m_lastDemon;      // Last demon entry used for spell initialization
-        bool m_isTempImp;        // True if imp summoned temporarily until soul shard acquired for demon of choice.
         uint32 m_CurrentCurse;   // Curse currently active on bot's target
 };
 

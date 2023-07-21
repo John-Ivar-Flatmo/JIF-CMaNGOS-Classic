@@ -2771,6 +2771,7 @@ void PlayerbotAI::DoFlight()
 
 void PlayerbotAI::DoLoot()
 {
+
     // clear BOTSTATE_LOOTING if no more loot targets
     if (m_lootCurrent.IsEmpty() && m_lootTargets.empty())
     {
@@ -4059,6 +4060,7 @@ void PlayerbotAI::UpdateAI(const uint32 /*p_time*/)
     // bot was in combat recently - loot now
     if (m_botState == BOTSTATE_COMBAT)
     {
+	m_attackerInfo.clear();
         if (GetCombatOrder() & ORDERS_TEMP)
         {
             if (GetCombatOrder() & ORDERS_TEMP_WAIT_TANKAGGRO)
@@ -4067,13 +4069,13 @@ void PlayerbotAI::UpdateAI(const uint32 /*p_time*/)
                 TellMaster("I was still waiting OOC but I just got out of combat...");
             ClearCombatOrder(ORDERS_TEMP);
         }
-        SetState(BOTSTATE_LOOTING);
-        m_attackerInfo.clear();
-        if (HasCollectFlag(COLLECT_FLAG_COMBAT))
-            m_lootTargets.unique();
-        else
-            m_lootTargets.clear();
-
+	if(GetFreeBagSpace() != 0){	//dont try to loot when inventory full FFS
+        	SetState(BOTSTATE_LOOTING);
+        	if (HasCollectFlag(COLLECT_FLAG_COMBAT))
+        	    m_lootTargets.unique();
+      	 	else
+       		    m_lootTargets.clear();
+	};
     }
 
     if (m_botState == BOTSTATE_LOOTING)
@@ -7432,6 +7434,11 @@ void PlayerbotAI::_HandleCommandQuest(std::string& text, Player& fromPlayer)
     }
 }
 
+uint8 PlayerbotAI::GetPreferedWarlockPet() const
+{
+    return preferedWarlockPet;
+}
+int preferedWarlockPet = 0; //default to 0 for based on spec or whaterver else is in WarlockAi
 void PlayerbotAI::_HandleCommandPet(std::string& text, Player& fromPlayer)
 {
     Pet* pet = m_bot->GetPet();
@@ -7508,6 +7515,38 @@ void PlayerbotAI::_HandleCommandPet(std::string& text, Player& fromPlayer)
             CastPetSpell(spellId, pTarget);
         }
     }
+
+	//this section needs to be redone //FIXME
+    else if ((ExtractCommand("reset", text)) || (ExtractCommand("default", text)) || (ExtractCommand("auto", text)) )
+    {
+	preferedWarlockPet = 0;
+	SendWhisper("prefering default pet selection", fromPlayer);
+    }
+
+    else if (ExtractCommand("imp", text))
+    {
+	preferedWarlockPet = 1;
+	SendWhisper("prefering imp", fromPlayer);
+    }
+
+    else if ( (ExtractCommand("voidwalker", text)) || (ExtractCommand("void", text)) )
+    {
+	preferedWarlockPet = 2;
+	SendWhisper("prefering voidwalker", fromPlayer);
+    }
+
+    else if ( (ExtractCommand("succubus", text)) || (ExtractCommand("suc", text)) || (ExtractCommand("succ", text)) )
+    {
+	preferedWarlockPet = 3;
+	SendWhisper("prefering succubus", fromPlayer);
+    }
+
+    else if ( (ExtractCommand("felhunter", text)) || (ExtractCommand("fellhunter", text)) || (ExtractCommand("fel", text)) )
+    {
+	preferedWarlockPet = 4;
+	SendWhisper("prefering felhunter", fromPlayer);
+    }
+
     else if (ExtractCommand("toggle", text))
     {
         if (text == "")

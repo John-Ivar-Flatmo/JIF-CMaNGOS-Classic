@@ -447,7 +447,8 @@ class PlayerbotAI
         Item* FindManaRegenItem() const;
         bool  FindAmmo() const;
         bool CanStore();
-
+        uint8 GetPreferedWarlockPet() const;
+		int preferedWarlockPet;
         // ******* Actions ****************************************
         // Your handlers can call these actions to make the bot do things.
         void TellMaster(const std::string& text) const;
